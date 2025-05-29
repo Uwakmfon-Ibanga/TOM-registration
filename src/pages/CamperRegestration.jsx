@@ -1,20 +1,84 @@
 import React, { useState } from 'react'
+import SignatureCanvas from 'react-signature-canvas'
 
 const CamperRegestration = () => {
   const [campersFirstName, setCampersFirstName] = useState('')
   const [campersMiddleName, setCampersMiddleName] = useState('')
   const [campersLastName, setCampersLastName] = useState('')
   const [age, setAge] = useState('')
+  const [school, setSchool] = useState('')
   const[gender, setGender] = useState('')
   const[parentsFirstName, setParentsFirstName] = useState('')
   const[parentsLastName, setParentsLastName] = useState('')
+  const[email, setEmail] = useState('')
   const[phone1, setPhone1] = useState('')
   const[phone2, setPhone2] = useState('')
-  const[address, setAddress] = useState('')
+  const[HomeAddress, setHomeAddress] = useState('')
+  const[churchAddress, setChurchAddress] = useState('')
   const[relationship, setRelationship] = useState('')
+  const [previouCampAttendings, setPreviouCampAttendings] = useState('')
+  const [attendedCampBefore, setAttendedCampBefore ] = useState(false)
+  const [imageFile, setImageFile] = useState(null);
+
+  const colors = ['blue', 'red', 'yellow', 'brown'];
+
+  const assignGroup = async () => {
+    // Get the current number of campers per group from Supabase
+    const { data: campers } = await supabase
+      .from('campers')
+      .select('group')
+      .order('id', { ascending: true });
+
+    // Count campers in each group
+    const groupCount = {
+      blue: 0,
+      red: 0,
+      yellow: 0,
+      brown: 0
+    }
+
+    campers.forEach(camper => {
+      groupCount.camper.group++; // Increment the count for the camper's group
+    });
+
+    // Find the group with the least number of campers
+    const group = colors.reduce((prev, curr) => groupCount[prev] <= groupCount[curr] ? prev : curr)
+
+    return group; // Return the group with the least campers
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    assignGroup();
+
+    const { data, error } = await supabase
+    .from("campers'details")
+    .insert([{campersFirstName, campersMiddleName, campersLastName, group, age, school, gender, parentsFirstName, parentsLastName, email, phone1, phone2, HomeAddress, churchAddress, relationship, previouCampAttendings, attendedCampBefore}])
+    .select();
+
+    if (error) {
+      console.error("Error inserting camper details:", error);
+      alert("There was an error submitting the form. Please try again.", error.message);
+    }
+    else {
+      console.log("Camper details inserted successfully:", data);
+      alert("Camper details submitted successfully!");
+    }
+  }
+  
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+
+
+
+
   return (
     <>
-    <form className='m-auto w-[100%] bg-gray-200 flex flex-col gap-10'>
+    <form onSubmit={handleSubmit} className='lg:px-[10rem] w-[100%] bg-gray-200 flex flex-col gap-10 pb-6'>
     <div style={{backgroundImage: "url('/stock1.jpg')"}} className=' w-full h-[200px] m-auto bg-center bg-cover bg-no-repeat'>
         </div>
         
@@ -29,26 +93,85 @@ const CamperRegestration = () => {
       {/* container for names */}
       <div className='flex gap-2'>
         <label htmlFor="firstName" className='text-[1em] text-green-800 font-medium'>First Name
-        <input type="text" id='firstName' value={campersFirstName} onChange={(e) => setCampersFirstName(e.target.value)} 
+        <input type="text" id='firstName' placeholder='Jerry' value={campersFirstName} onChange={(e) => setCampersFirstName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
         <label htmlFor="middleName" className='text-[1em] text-green-800 font-medium'>Middle Name
-        <input type="text" id='firstName' value={campersMiddleName} onChange={(e) => setCampersMiddleName(e.target.value)} 
+        <input type="text" id='firstName' placeholder='Peter' value={campersMiddleName} onChange={(e) => setCampersMiddleName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
-         <label htmlFor="middleName" className='text-[1em] text-green-800 font-medium'>Middle Name
-        <input type="text" id='firstName' value={campersLastName} onChange={(e) => setCampersLastName(e.target.value)} 
+         <label htmlFor="middleName" className='text-[1em] text-green-800 font-medium'>Last Name
+        <input type="text" id='firstName' placeholder='Tom' value={campersLastName} onChange={(e) => setCampersLastName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
       </div>
 
       {/* container for age */}
         <label htmlFor="age" className='text-[1em] text-green-800 font-medium'>Age
-        <input type="number" id='age' value={age} onChange={(e) => setAge(e.target.value)} 
+        <input type="number" id='age' placeholder='16' value={age} onChange={(e) => setAge(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
+
+      {/* container for school */}
+        <label htmlFor="school" className='text-[1em] text-green-800 font-medium'>Name Of School
+        <input type="text" id='school' placeholder='Community Comprehensive College' value={school} onChange={(e) => setSchool(e.target.value)} 
+        className='border-2 border-gray-300 rounded-md p-2 w-full' />
+        </label>
+
+      {/* container for Home Address */}
+        <label htmlFor="homeAddress" className='text-[1em] text-green-800 font-medium'>Home Address
+        <input type="text" placeholder='no. 2 heaven street, off streets of gold, uyo' id='HomeAddress' value={HomeAddress} onChange={(e) => setHomeAddress(e.target.value)} 
+        className='border-2 border-gray-300 rounded-md p-2 w-full' />
+        </label>
+
+      {/* container for church Address */}
+        <label htmlFor="address" className='text-[1em] text-green-800 font-medium'>Name and address of church
+        <textarea name="" id="" placeholder='UfokAbasi. no. 2 heaven street, off streets of gold, uyo' className='hover:border-green-800 border-2 border-gray-300 rounded-md p-2 w-full' cols="20" rows="3" value={churchAddress} onChange={(e) => setChurchAddress(e.target.value)}>
+        </textarea>
+        </label>
+
+        {/* input for user passport */}
+        {/* <label className='text-[1em] text-green-800 font-medium'>Upload a passport */}
+        <input onChange={handleImageChange} type="file" accept='image/jpgx' className='border-2'  />
+        {/* </label> */}
+
+        {/* container for 'if attended camp before' */}
+        <div className='flex gap-4'>
+      <div id='gender'>
+        <h2 className='text-[1em] text-green-800 font-medium'>Have You Attended Camp Before?</h2>
+        
+         <label className='text-[1.2em] font-light flex items-center'>
+        <input type="radio"
+        name='hasAttendedCampBefore'
+        value={true}
+        // checked={}
+           onChange={() => {
+          setAttendedCampBefore(true)
+          console.log("this camper has attended camp before")
+          console.log(attendedCampBefore)}}/>
+        yes</label>
+
+         <label className='text-[1.2em] font-light flex items-center'>
+        <input type="radio"
+        name='hasAttendedCampBefore'
+        value={false}
+        // checked={}
+        onChange={() => {
+          setAttendedCampBefore(false)
+          console.log("this camper has not attended camp before")
+          console.log(attendedCampBefore)}} />
+        No</label>
+
+       </div>
+
+        {attendedCampBefore && <label htmlFor="homeAddress" className='text-[1em] text-green-800 font-medium'>When?
+        <input type="text" id='HomeAddress' value={previouCampAttendings} placeholder='2022, 2023' onChange={(e) => setPreviouCampAttendings(e.target.value)} 
+        className='border-2 border-gray-300 rounded-md p-2 w-full' />
+        </label>}
+
+        </div>
 
         {/* container for gender */}
        <div id='gender'>
@@ -74,6 +197,14 @@ const CamperRegestration = () => {
 
        </div>
 
+       <div className='w-[200px]'>
+        <label className='text-[1em] text-green-800 font-medium'>Camper's signature
+          <SignatureCanvas penColor='green'
+    canvasProps={{width: 300, height: 150, className: 'sigCanvas border border-black'}} />
+          
+           </label>
+       </div>
+
 
 
     </section>
@@ -85,28 +216,51 @@ const CamperRegestration = () => {
       {/* container for names */}
       <div className='flex gap-2'>
         <label htmlFor="firstName" className='text-[1em] text-green-800 font-medium'>First Name
-        <input type="text" id='firstName' value={campersFirstName} onChange={(e) => setFirstName(e.target.value)} 
+        <input type="text" id='firstName' value={parentsFirstName} placeholder='John' onChange={(e) => setParentsFirstName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
 
          <label htmlFor="middleName" className='text-[1em] text-green-800 font-medium'>Last Name
-        <input type="text" id='firstName' value={campersLastName} onChange={(e) => setLastName(e.target.value)} 
+        <input type="text" id='firstName' value={parentsLastName} placeholder='Doe' onChange={(e) => setParentsLastName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
       </div>
 
+      {/* container for email */}
+      <div>
+        <label className='text-[1em] text-green-800 font-medium'>Email
+        <input type="email" placeholder='johndoe@gmail.com' value={email} onChange={(e) => setEmail(e.target.value)} 
+        className='border-2 border-gray-300 rounded-md p-2 w-full' />
+        </label>
+        <p className='font-medium text-xs'>(this is the email that will receive necessary information)</p>
+        </div>
+
+      {/* container for relationship */}
+        <label htmlFor="rlationship" className='text-[1em] text-green-800 font-medium'>Relationship
+        <input type="text" placeholder='Mother, Father, Uncle....' id='phone-number' value={relationship} onChange={(e) => setRelationship(e.target.value)} 
+        className='border-2 border-gray-300 rounded-md p-2 w-full' />
+        </label>
+
       {/* container for phone number */}
         <label htmlFor="phone-number" className='text-[1em] text-green-800 font-medium'>phone number
-        <input type="number" id='phone-number' value={phone1} onChange={(e) => setPhone1(e.target.value)} 
+        <input type="number" id='phone-number' value={phone1} placeholder='09011111111' onChange={(e) => setPhone1(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
         <label htmlFor="phone-number2" className='text-[1em] text-green-800 font-medium'>phone number 2 
-        <input type="number" id='phone-number2' value={phone2} onChange={(e) => setPhone2(e.target.value)} 
+        <input type="number" id='phone-number2' value={phone2} placeholder='09022222222' onChange={(e) => setPhone2(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         <p className='font-medium text-xs'>(should be a different person's phone number)</p>
         </label>
+
+        <div className='w-[200px]'>
+        <label className='text-[1em] text-green-800 font-medium'>guardian's signature
+          <SignatureCanvas penColor='green'
+    canvasProps={{width: 300, height: 150, className: 'sigCanvas border border-black'}} />
+          
+           </label>
+       </div>
 
 
     </section>
@@ -131,9 +285,29 @@ const CamperRegestration = () => {
 
 
     </section>
+
+    <section className='flex flex-col gap-4 '>
+      <h1 className='text-[1.3em] text-2xl text-green-800 font-medium'>Informed Consent and Acknowledgement</h1>
+      <div className='flex flex-col gap-4 '>
+        <p>
+          I hereby give my approval for my child’s participation in any and all activities prepared by TOM during the selected camp. In exchange for the acceptance of said child’s candidacy by TOM, I assume all risk and hazards incidental to the conduct of the activities, and release, absolve and hold harmless TOM and all its respective officers, agents, and representatives from any and all liability for injuries to said child arising out of traveling to, participating in, or returning from selected camp sessions.
+        </p>
+        <p>
+          In case of injury to said child, I hereby waive all claims against TOM including all coaches and affiliates, all participants, sponsoring agencies, advertisers, and, if applicable, owners and lessors of premises used to conduct the event. There is a risk of being injured that is inherent in all sports activities. Some of these injuries include, but are not limited to, the risk of fractures, paralysis, or death.
+        </p>
+      </div>
+    </section>
+
+    <section className='flex flex-col gap-4 '>
+      <h1 className='text-[1.3em] text-2xl text-green-800 font-medium'>Confirmation</h1>
+      
+        <p>
+          BY ACKNOWLEDGING AND SIGNING THE ABOVE FORM, I AM DELIVERING AN ELECTRONIC SIGNATURE THAT WILL HAVE THE SAME EFFECT AS AN ORIGINAL MANUAL PAPER SIGNATURE. THE ELECTRONIC SIGNATURE WILL BE EQUALLY AS BINDING AS AN ORIGINAL MANUAL PAPER SIGNATURE.
+        </p>
+    </section>
     </div>
 
-    <button className='self-center bg-green-800 text-white p-2 rounded' type="submit">Submit</button>
+    <button disabled className='self-center bg-green-800 text-white p-2 rounded cursor-pointer hover:bg-green-600 active:bg-green-800' type="submit">Register</button>
     </form>
     </>
   )
