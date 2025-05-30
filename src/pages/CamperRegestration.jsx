@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
+import supabase from '../config/supabaseClient'
 import SignatureCanvas from 'react-signature-canvas'
 
 const CamperRegestration = () => {
@@ -18,16 +19,94 @@ const CamperRegestration = () => {
   const[relationship, setRelationship] = useState('')
   const [previouCampAttendings, setPreviouCampAttendings] = useState('')
   const [attendedCampBefore, setAttendedCampBefore ] = useState(false)
+  const [medicalInfo, setMedicalInfo ] = useState('')
+  const [inhalerInfo, setInhalerInfo ] = useState('')
   const [imageFile, setImageFile] = useState(null);
+    const [camperSignature, setCamperSignature] = useState('');
+  const [guardianSignature, setGuardianSignature] = useState('');
 
   const colors = ['blue', 'red', 'yellow', 'brown'];
 
+  // useRefs for the two signatures
+  const camperSigRef = useRef(null);
+const guardianSigRef = useRef(null);
+
+
+// clear camper signature
+const clearCamperSignature = () => {
+    camperSigRef.current.clear();
+    setCamperSignature(''); // clear state too
+  };
+
+  // Save camper signature
+  const saveCamperSignature = () => {
+    if (camperSigRef.current.isEmpty()) {
+      alert('Please provide the camper signature before saving.');
+      return;
+    }
+    const dataURL = camperSigRef.current.toDataURL('image/png');
+    setCamperSignature(dataURL);
+    console.log('Camper signature:', dataURL);
+  };
+
+  // Clear guardian signature
+  const clearGuardianSignature = () => {
+    guardianSigRef.current.clear();
+    setGuardianSignature(''); // clear state too
+  };
+
+  // Save guardian signature
+  const saveGuardianSignature = () => {
+    if (guardianSigRef.current.isEmpty()) {
+      alert('Please provide the guardian signature before saving.');
+      return;
+    }
+    const dataURL = guardianSigRef.current.toDataURL('image/png');
+    setGuardianSignature(dataURL);
+    console.log('Guardian signature:', dataURL);
+  };
+
+  const uploadPassport = async (file) => {
+  if (!file) {
+    alert("No file selected for upload");
+    return null;
+  }
+
+  // Create a unique filename, e.g., using timestamp + original name
+  const fileName = `${Date.now()}_${file.name}`;
+
+  // Upload file to the 'passports' bucket
+  const { data, error } = await supabase.storage
+    .from('passports')
+    .upload(fileName, file);
+
+  if (error) {
+    console.error("Error uploading file:", error);
+    alert("Failed to upload passport image.");
+    return null;
+  }
+
+  // Return the public URL or path to the uploaded file
+  // If bucket is public:
+  const publicURL = supabase.storage.from('passports').getPublicUrl(fileName).data.publicUrl;
+
+  return publicURL;
+};
+
+
   const assignGroup = async () => {
     // Get the current number of campers per group from Supabase
-    const { data: campers } = await supabase
-      .from('campers')
+    const { data: campers, error } = await supabase
+      .from("campersDetails")
       .select('group')
       .order('id', { ascending: true });
+
+      if (error) {
+        console.error("Error fetching campers data:", error);
+      }
+
+      // console.log("Current campers data:", campers);
+      
 
     // Count campers in each group
     const groupCount = {
@@ -37,9 +116,15 @@ const CamperRegestration = () => {
       brown: 0
     }
 
-    campers.forEach(camper => {
-      groupCount.camper.group++; // Increment the count for the camper's group
-    });
+    // check if the list of signups is empty(the first person is signing up) then it skips the counting to avoid possible errors
+   if (campers && campers.length > 0) {
+  campers.forEach(camper => {
+    if (groupCount[camper.group] !== undefined) {
+      groupCount[camper.group]++;
+    }
+  });
+}
+
 
     // Find the group with the least number of campers
     const group = colors.reduce((prev, curr) => groupCount[prev] <= groupCount[curr] ? prev : curr)
@@ -49,11 +134,35 @@ const CamperRegestration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    assignGroup();
+    const group = await assignGroup();
+    saveCamperSignature();
+    saveGuardianSignature();
+
+     if (!camperSignature || !guardianSignature) {
+      alert('Please save both signatures before submitting.');
+      return;
+    }
+
+    // incase the camper has not uploaded a picture of them
+  //   if (!imageFile) {
+  //   alert("Please upload the passport image.");
+  //   return;
+  // }
+
+    // Upload passport
+  // const passportUrl = await uploadPassport(imageFile);
+
+//   if (!passportUrl) {
+//     setError('Passport upload failed. Please retry.');
+//   alert('Failed to upload passport image. Please try again.');
+//   console.error('Upload failed: passportUrl is empty.');
+//   return;
+// }
+    
 
     const { data, error } = await supabase
-    .from("campers'details")
-    .insert([{campersFirstName, campersMiddleName, campersLastName, group, age, school, gender, parentsFirstName, parentsLastName, email, phone1, phone2, HomeAddress, churchAddress, relationship, previouCampAttendings, attendedCampBefore}])
+    .from("campersDetails")
+    .insert([{campersFirstName, campersMiddleName, campersLastName, group, age, school, gender, parentsFirstName, parentsLastName, email, phone1, phone2, HomeAddress, churchAddress, relationship, previouCampAttendings, attendedCampBefore, medicalInfo, inhalerInfo, campersSignature:camperSignature, parentsSignature:guardianSignature, }])
     .select();
 
     if (error) {
@@ -93,49 +202,48 @@ const CamperRegestration = () => {
       {/* container for names */}
       <div className='flex gap-2'>
         <label htmlFor="firstName" className='text-[1em] text-green-800 font-medium'>First Name
-        <input type="text" id='firstName' placeholder='Jerry' value={campersFirstName} onChange={(e) => setCampersFirstName(e.target.value)} 
+        <input required type="text" id='firstName' placeholder='Jerry' value={campersFirstName} onChange={(e) => setCampersFirstName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
         <label htmlFor="middleName" className='text-[1em] text-green-800 font-medium'>Middle Name
-        <input type="text" id='firstName' placeholder='Peter' value={campersMiddleName} onChange={(e) => setCampersMiddleName(e.target.value)} 
+        <input required type="text" id='firstName' placeholder='Peter' value={campersMiddleName} onChange={(e) => setCampersMiddleName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
          <label htmlFor="middleName" className='text-[1em] text-green-800 font-medium'>Last Name
-        <input type="text" id='firstName' placeholder='Tom' value={campersLastName} onChange={(e) => setCampersLastName(e.target.value)} 
+        <input required type="text" id='firstName' placeholder='Tom' value={campersLastName} onChange={(e) => setCampersLastName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
       </div>
 
       {/* container for age */}
         <label htmlFor="age" className='text-[1em] text-green-800 font-medium'>Age
-        <input type="number" id='age' placeholder='16' value={age} onChange={(e) => setAge(e.target.value)} 
+        <input required type="number" id='age' placeholder='16' value={age} onChange={(e) => setAge(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
       {/* container for school */}
         <label htmlFor="school" className='text-[1em] text-green-800 font-medium'>Name Of School
-        <input type="text" id='school' placeholder='Community Comprehensive College' value={school} onChange={(e) => setSchool(e.target.value)} 
+        <input required type="text" id='school' placeholder='Community Comprehensive College' value={school} onChange={(e) => setSchool(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
       {/* container for Home Address */}
         <label htmlFor="homeAddress" className='text-[1em] text-green-800 font-medium'>Home Address
-        <input type="text" placeholder='no. 2 heaven street, off streets of gold, uyo' id='HomeAddress' value={HomeAddress} onChange={(e) => setHomeAddress(e.target.value)} 
+        <input required type="text" placeholder='no. 2 heaven street, off streets of gold, uyo' id='HomeAddress' value={HomeAddress} onChange={(e) => setHomeAddress(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
       {/* container for church Address */}
         <label htmlFor="address" className='text-[1em] text-green-800 font-medium'>Name and address of church
-        <textarea name="" id="" placeholder='UfokAbasi. no. 2 heaven street, off streets of gold, uyo' className='hover:border-green-800 border-2 border-gray-300 rounded-md p-2 w-full' cols="20" rows="3" value={churchAddress} onChange={(e) => setChurchAddress(e.target.value)}>
+        <textarea required name="" id="" placeholder='UfokAbasi. no. 2 heaven street, off streets of gold, uyo' className='hover:border-green-800 border-2 border-gray-300 rounded-md p-2 w-full' cols="20" rows="3" value={churchAddress} onChange={(e) => setChurchAddress(e.target.value)}>
         </textarea>
         </label>
 
         {/* input for user passport */}
-        {/* <label className='text-[1em] text-green-800 font-medium'>Upload a passport */}
-        <input onChange={handleImageChange} type="file" accept='image/jpgx' className='border-2'  />
-        {/* </label> */}
+        <label htmlFor='camperImage' className='text-[1em] text-green-800 font-medium'>Upload a passport</label>
+        <input required id='camperImage' onChange={handleImageChange} type="file" accept='image/' className='border-2'  />
 
         {/* container for 'if attended camp before' */}
         <div className='flex gap-4'>
@@ -143,7 +251,7 @@ const CamperRegestration = () => {
         <h2 className='text-[1em] text-green-800 font-medium'>Have You Attended Camp Before?</h2>
         
          <label className='text-[1.2em] font-light flex items-center'>
-        <input type="radio"
+        <input required type="radio"
         name='hasAttendedCampBefore'
         value={true}
         // checked={}
@@ -178,7 +286,7 @@ const CamperRegestration = () => {
         <h2 className='text-[1em] text-green-800 font-medium'>Gender</h2>
         
          <label htmlFor="male" className='text-[1.2em] font-light flex items-center'>
-        <input type="radio"
+        <input required type="radio"
         name='gender'
         id='male'
         value={'male'}
@@ -187,7 +295,7 @@ const CamperRegestration = () => {
         male</label>
 
          <label htmlFor="female" className='text-[1.2em] font-light flex items-center'>
-        <input type="radio"
+        <input required type="radio"
         name='gender'
         id='female'
         value={'female'}
@@ -197,12 +305,16 @@ const CamperRegestration = () => {
 
        </div>
 
-       <div className='w-[200px]'>
+       <div className='w-[200px] flex flex-col gap-2'>
         <label className='text-[1em] text-green-800 font-medium'>Camper's signature
-          <SignatureCanvas penColor='green'
+          <SignatureCanvas ref={camperSigRef} penColor='green'
     canvasProps={{width: 300, height: 150, className: 'sigCanvas border border-black'}} />
           
            </label>
+           <div className="flex gap-2">
+            <button type="button" className='bg-green-800 text-white p-1 rounded border-1' onClick={clearCamperSignature}>clear</button>
+            <button type="button" className='bg-green-800 text-white p-1 rounded border-1' onClick={saveCamperSignature}>save</button>
+           </div>
        </div>
 
 
@@ -215,14 +327,14 @@ const CamperRegestration = () => {
 
       {/* container for names */}
       <div className='flex gap-2'>
-        <label htmlFor="firstName" className='text-[1em] text-green-800 font-medium'>First Name
+        <label required htmlFor="firstName" className='text-[1em] text-green-800 font-medium'>First Name
         <input type="text" id='firstName' value={parentsFirstName} placeholder='John' onChange={(e) => setParentsFirstName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
 
          <label htmlFor="middleName" className='text-[1em] text-green-800 font-medium'>Last Name
-        <input type="text" id='firstName' value={parentsLastName} placeholder='Doe' onChange={(e) => setParentsLastName(e.target.value)} 
+        <input required type="text" id='firstName' value={parentsLastName} placeholder='Doe' onChange={(e) => setParentsLastName(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
       </div>
@@ -230,7 +342,7 @@ const CamperRegestration = () => {
       {/* container for email */}
       <div>
         <label className='text-[1em] text-green-800 font-medium'>Email
-        <input type="email" placeholder='johndoe@gmail.com' value={email} onChange={(e) => setEmail(e.target.value)} 
+        <input required type="email" placeholder='johndoe@gmail.com' value={email} onChange={(e) => setEmail(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
         <p className='font-medium text-xs'>(this is the email that will receive necessary information)</p>
@@ -238,28 +350,31 @@ const CamperRegestration = () => {
 
       {/* container for relationship */}
         <label htmlFor="rlationship" className='text-[1em] text-green-800 font-medium'>Relationship
-        <input type="text" placeholder='Mother, Father, Uncle....' id='phone-number' value={relationship} onChange={(e) => setRelationship(e.target.value)} 
+        <input required type="text" placeholder='Mother, Father, Uncle....' id='phone-number' value={relationship} onChange={(e) => setRelationship(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
       {/* container for phone number */}
         <label htmlFor="phone-number" className='text-[1em] text-green-800 font-medium'>phone number
-        <input type="number" id='phone-number' value={phone1} placeholder='09011111111' onChange={(e) => setPhone1(e.target.value)} 
+        <input required type="number" id='phone-number' value={phone1} placeholder='09011111111' onChange={(e) => setPhone1(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         </label>
 
         <label htmlFor="phone-number2" className='text-[1em] text-green-800 font-medium'>phone number 2 
-        <input type="number" id='phone-number2' value={phone2} placeholder='09022222222' onChange={(e) => setPhone2(e.target.value)} 
+        <input required type="number" id='phone-number2' value={phone2} placeholder='09022222222' onChange={(e) => setPhone2(e.target.value)} 
         className='border-2 border-gray-300 rounded-md p-2 w-full' />
         <p className='font-medium text-xs'>(should be a different person's phone number)</p>
         </label>
 
-        <div className='w-[200px]'>
+        <div className='w-[200px] flex flex-col gap-2'>
         <label className='text-[1em] text-green-800 font-medium'>guardian's signature
-          <SignatureCanvas penColor='green'
+          <SignatureCanvas ref={guardianSigRef} required penColor='green'
     canvasProps={{width: 300, height: 150, className: 'sigCanvas border border-black'}} />
-          
            </label>
+           <div className="flex gap-2">
+            <button type="button" className='bg-green-800 text-white p-1 rounded border-1' onClick={clearGuardianSignature}>clear</button>
+            <button type="button" className='bg-green-800 text-white p-1 rounded border-1' onClick={saveGuardianSignature}>save</button>
+           </div>
        </div>
 
 
@@ -273,20 +388,20 @@ const CamperRegestration = () => {
 
       <label >
         Does the Camper have any allergies, chronic illness, or medical conditions? If yes, please describe.
-        <textarea name="" id="" className='hover:border-green-800 border-2 border-gray-300 rounded-md p-2 w-full' cols="30" rows="5">
+        <textarea name="" id="" className='hover:border-green-800 border-2 border-gray-300 rounded-md p-2 w-full' cols="30" rows="5" onChange={(e) => setMedicalInfo(e.target.value)} value = {medicalInfo}>
         </textarea>
       </label>
 
       <label>
         Is the camper prescribed an inhaler? If yes, please explain any instructions.
-        <textarea name="" id="" className='hover:border-green-800 border-2 border-gray-300 rounded-md p-2 w-full' cols="30" rows="5">
+        <textarea name="" id="" className='hover:border-green-800 border-2 border-gray-300 rounded-md p-2 w-full' cols="30" rows="5" onChange={(e) => setInhalerInfo(e.target.value)} value = {inhalerInfo}>
         </textarea>
       </label>
 
 
     </section>
 
-    <section className='flex flex-col gap-4 '>
+    <section className='flex flex-col gap-4 mx-3'>
       <h1 className='text-[1.3em] text-2xl text-green-800 font-medium'>Informed Consent and Acknowledgement</h1>
       <div className='flex flex-col gap-4 '>
         <p>
@@ -298,7 +413,7 @@ const CamperRegestration = () => {
       </div>
     </section>
 
-    <section className='flex flex-col gap-4 '>
+    <section className='flex flex-col gap-4 mx-3'>
       <h1 className='text-[1.3em] text-2xl text-green-800 font-medium'>Confirmation</h1>
       
         <p>
@@ -307,7 +422,7 @@ const CamperRegestration = () => {
     </section>
     </div>
 
-    <button disabled className='self-center bg-green-800 text-white p-2 rounded cursor-pointer hover:bg-green-600 active:bg-green-800' type="submit">Register</button>
+    <button className='self-center bg-green-800 text-white p-2 rounded cursor-pointer hover:bg-green-600 active:bg-green-800' type="submit">Register</button>
     </form>
     </>
   )
