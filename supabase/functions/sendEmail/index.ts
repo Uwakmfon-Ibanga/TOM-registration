@@ -21,14 +21,14 @@ serve(async (req) => {
 
   try {
     // ✅ AUTH CHECK
-    const authHeader = req.headers.get("Authorization") || "";
+    // const authHeader = req.headers.get("Authorization") || "";
     
-    if (authHeader !== `Bearer ${AUTH_SECRET}`) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // if (authHeader !== `Bearer ${AUTH_SECRET}`) {
+    //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    //     status: 401,
+    //     headers: { ...corsHeaders, "Content-Type": "application/json" },
+    //   });
+    // }
 
 
 
