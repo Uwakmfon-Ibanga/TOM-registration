@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { Resend } from "npm:resend";
 
-const AUTH_SECRET = Deno.env.get("EDGE_FUNCTION_SECRET");
+const AUTH_SECRET = Deno.env.get("AUTH_SECRET");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,6 +29,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+
 
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const body = await req.json();
