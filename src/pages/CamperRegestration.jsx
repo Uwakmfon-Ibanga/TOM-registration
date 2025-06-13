@@ -209,7 +209,7 @@ const CamperRegestration = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Authorization: `Bearer mycustomkey123`,
+            Authorization: `Bearer mycustomkey123`,
           },
           body: JSON.stringify({
             email,
