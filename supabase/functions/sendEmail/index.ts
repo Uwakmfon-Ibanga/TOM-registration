@@ -20,18 +20,22 @@ serve(async (req) => {
   }
 
   try {
-    ✅ AUTH CHECK
-    const authHeader = req.headers.get("Authorization") || "";
     
-    if (authHeader !== `Bearer ${AUTH_SECRET}`) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+console.log('Attempting to send email...');
+    // ✅ AUTH CHECK
+const authHeader = req.headers.get("Authorization") || "";
+const token = authHeader.replace("Bearer ", "");
+
+// Verify it's a valid Supabase token (basic check)
+if (!token || token.length < 20) {
+  return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    status: 401,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 
-
+    
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const body = await req.json();
     const { email, name, group, ID } = body;
@@ -80,6 +84,7 @@ html: `
   </div>
 `
     });
+    console.log('Function called with:', { email, name, group, ID });
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {

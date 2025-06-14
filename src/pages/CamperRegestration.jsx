@@ -26,6 +26,7 @@ const CamperRegestration = () => {
   const [guardianSignature, setGuardianSignature] = useState("");
 
   const colors = ["blue", "red", "yellow", "brown"];
+  const VITE_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   // useRefs for the two signatures
   const camperSigRef = useRef(null);
@@ -209,7 +210,7 @@ const CamperRegestration = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer mycustomkey123`,
+            Authorization: `Bearer ${VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             email,
