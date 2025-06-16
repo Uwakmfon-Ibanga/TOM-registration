@@ -41,7 +41,7 @@ if (!token || token.length < 20) {
     const { email, name, group, ID } = body;
 
     const { data, error } = await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "smtp.tomakwaibom.org.ng",
 to: email,
 subject: "TOM's Camp 2025 - Registration Confirmation",
 html: `
@@ -98,7 +98,19 @@ html: `
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
-  } catch (err) {
+  } 
+  // catch (err) {
+  //   console.error('Function error:', err);
+  //   return new Response(JSON.stringify({ 
+  //     error: "Failed to send email",
+  //     details: err.message 
+  //   }), {
+  //     status: 500,
+  //     headers: { ...corsHeaders, "Content-Type": "application/json" },
+  //   });
+  // }
+  
+  catch (err) {
     return new Response(JSON.stringify({ error: "Failed to send email" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
