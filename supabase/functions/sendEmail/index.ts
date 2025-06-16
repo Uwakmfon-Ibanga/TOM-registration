@@ -2,7 +2,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { Resend } from "npm:resend";
 
-const AUTH_SECRET = Deno.env.get("AUTH_SECRET");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,12 +35,27 @@ if (!token || token.length < 20) {
 
 
     
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+   const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+if (!resendApiKey) {
+  console.error("Missing RESEND_API_KEY");
+  return new Response("Server misconfiguration: missing RESEND_API_KEY", {
+    status: 500,
+    headers: corsHeaders,
+  });
+}
+
+const resend = new Resend(resendApiKey);
+
+
+
+
+
     const body = await req.json();
     const { email, name, group, ID } = body;
 
     const { data, error } = await resend.emails.send({
-      from: "smtp.tomakwaibom.org.ng",
+      from: "noreply@smtp.tomakwaibom.org.ng",
 to: email,
 subject: "TOM's Camp 2025 - Registration Confirmation",
 html: `
@@ -87,6 +101,7 @@ html: `
     console.log('Function called with:', { email, name, group, ID });
 
     if (error) {
+      console.error("Resend error:", error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -98,22 +113,32 @@ html: `
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
-  } 
-  // catch (err) {
+  } catch (err) {  console.error("Function crashed:", err)
+  return new Response(JSON.stringify({ 
+    error: "Failed to send email",
+    details: err.message 
+  }), {
+    status: 500,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}});
+
+ // catch (err) {
   //   console.error('Function error:', err);
   //   return new Response(JSON.stringify({ 
   //     error: "Failed to send email",
   //     details: err.message 
   //   }), {
   //     status: 500,
-  //     headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+//     headers: { ...corsHeaders, "Content-Type": "application/json" },
   //   });
   // }
   
-  catch (err) {
-    return new Response(JSON.stringify({ error: "Failed to send email" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-});
+//   catch (err) {
+//     return new Response(JSON.stringify({ error: "Failed to send email" }), {
+//       status: 500,
+//       headers: { ...corsHeaders, "Content-Type": "application/json" },
+//     });
+//   }
+
