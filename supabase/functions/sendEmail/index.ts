@@ -72,24 +72,17 @@ html: `
     
     <p>We're thrilled to have you join us for this exciting experience!</p>
     
-    <p><strong>Payment Instructions:</strong></p>
-    <p>As an early bird registrant, your camp fee is <strong>₦5,000</strong>.</p>
+    <p><strong>Camp Details:</strong></p>
     
-    <p>Please make payment to:</p>
     <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;">
-      <p><strong>Account Name:</strong> Teenagers Outreach Ministries</p>
-      <p><strong>Account Number:</strong> 2037223476</p>
-      <p><strong>Bank:</strong> First Bank</p>
+      <p><strong>Date:</strong> Tues. 19th - Sun. 24th August 2025.</p>
+      <p><strong>Venue:</strong> Lutheran High School, Obot Idim, Ibesikpo LGA. (If there are changes to the venue, it will be duely communicated to you)
+</p>
     </div>
     
-    <p><strong>After payment:</strong></p>
-    <ol>
-      <li>Take a screenshot or photo of your payment receipt</li>
-      <li>Send it via WhatsApp to our registrar at <strong>+234 905 534 9173</strong></li>
-      <li>Include the camper's name and ID in your message</li>
-    </ol>
-    
-    <p>Your registration will be finalized upon payment confirmation.</p>
+    <p>Please come to camp with this registration email for Id verification and your personal items such as a food flask, bucket, plate, spoon, cup, bedsheet, and other utensils.</p>
+
+    <p>For inquiries, call: 08024968773, 08033628087.</p>
     
     <p>We look forward to seeing you at camp!</p>
     
